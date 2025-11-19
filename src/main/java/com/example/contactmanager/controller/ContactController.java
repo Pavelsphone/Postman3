@@ -2,10 +2,12 @@ package com.example.contactmanager.controller;
 
 import com.example.contactmanager.dao.ContactDao;
 import com.example.contactmanager.entity.Contact;
+import com.example.contactmanager.service.ContactService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -16,6 +18,9 @@ public class ContactController {
 
     @Autowired
     private ContactDao contactDao;
+
+    @Autowired
+    private ContactService contactService;
 
     @GetMapping
     public List<Contact> getAllContacts() {
@@ -59,5 +64,18 @@ public class ContactController {
         contactDao.deleteContact(id);
         return ResponseEntity.noContent().build();
     }
+
+    // Новый эндпоинт для загрузки CSV
+    @PostMapping("/upload-csv")
+    public ResponseEntity<String> uploadContactsFromCsv(@RequestParam("file") MultipartFile file) {
+        try {
+            contactService.uploadContactsFromCsv(file);
+            return ResponseEntity.ok("Файл успешно загружен и данные сохранены в базу");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Ошибка при загрузке файла: " + e.getMessage());
+        }
+    }
 }
+
 
