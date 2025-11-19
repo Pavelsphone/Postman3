@@ -1,56 +1,63 @@
 package com.example.contactmanager.controller;
 
-import com.example.contactmanager.model.Contact;
-import com.example.contactmanager.repository.ContactRepository;
+import com.example.contactmanager.dao.ContactDao;
+import com.example.contactmanager.entity.Contact;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/contacts")
 public class ContactController {
-    private final ContactRepository contactRepository;
 
-    public ContactController(ContactRepository contactRepository) {
-        this.contactRepository = contactRepository;
-    }
+    @Autowired
+    private ContactDao contactDao;
 
     @GetMapping
     public List<Contact> getAllContacts() {
-        return contactRepository.findAll();
+        return contactDao.getAllContacts();
     }
 
-    @GetMapping("/{contactId}")
-    public ResponseEntity<Contact> getContactById(@PathVariable Long contactId) {
-        return contactRepository.findById(contactId)
-                .map(contact -> ResponseEntity.ok().body(contact))
+    @GetMapping("/{id}")
+    public ResponseEntity<Contact> getContactById(@PathVariable Long id) {
+        Optional<Contact> contact = contactDao.getContactById(id);
+        return contact.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
     public Contact createContact(@RequestBody Contact contact) {
-        return contactRepository.save(contact);
+        return contactDao.addContact(contact);
     }
 
-    @PutMapping("/{contactId}")
-    public ResponseEntity<Contact> updateContact(@PathVariable Long contactId, @RequestBody Contact contactDetails) {
-        if (!contactRepository.existsById(contactId)) {
+    @PutMapping("/{id}/phone")
+    public ResponseEntity<Contact> updatePhone(@PathVariable Long id, @RequestBody String phone) {
+        Contact updatedContact = contactDao.updatePhone(id, phone);
+        if (updatedContact != null) {
+            return ResponseEntity.ok(updatedContact);
+        } else {
             return ResponseEntity.notFound().build();
         }
-
-        contactDetails.setId(contactId);
-        Contact updatedContact = contactRepository.save(contactDetails);
-        return ResponseEntity.ok(updatedContact);
     }
 
-    @DeleteMapping("/{contactId}")
-    public ResponseEntity<Void> deleteContact(@PathVariable Long contactId) {
-        if (!contactRepository.existsById(contactId)) {
+    @PutMapping("/{id}/email")
+    public ResponseEntity<Contact> updateEmail(@PathVariable Long id, @RequestBody String email) {
+        Contact updatedContact = contactDao.updateEmail(id, email);
+        if (updatedContact != null) {
+            return ResponseEntity.ok(updatedContact);
+        } else {
             return ResponseEntity.notFound().build();
         }
+    }
 
-        contactRepository.deleteById(contactId);
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteContact(@PathVariable Long id) {
+        contactDao.deleteContact(id);
         return ResponseEntity.noContent().build();
     }
 }
+
